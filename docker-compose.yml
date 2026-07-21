@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: society360-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: society360
+      POSTGRES_USER: society360
+      POSTGRES_PASSWORD: society360
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U society360"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: society360-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/society360
+      DB_USERNAME: society360
+      DB_PASSWORD: society360
+      JWT_SECRET: change-this-to-a-256bit-random-secret
+      CORS_ORIGINS: http://localhost:4200
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
